@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "ts-node src/callbackVersion.ts",
+    "dev": "tsc --watch && nodemon dist/callbackVersion.js",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
