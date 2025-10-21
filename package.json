@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,6 +20,10 @@
   },
   "homepage": "https://github.com/Sbonelo2/Weather---News-Dashboard#readme",
   "devDependencies": {
+    "nodemon": "^3.1.10",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
   }
 }
