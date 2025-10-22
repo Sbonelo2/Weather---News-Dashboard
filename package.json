@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/callbackVersion.ts",
+    "start": "node --experimental-specifier-resolution=node dist/callbackVersion.js",
     "dev": "tsc --watch && nodemon dist/callbackVersion.js",
     "build": "tsc"
   },
@@ -19,6 +19,7 @@
     "url": "https://github.com/Sbonelo2/Weather---News-Dashboard/issues"
   },
   "homepage": "https://github.com/Sbonelo2/Weather---News-Dashboard#readme",
+  "type": "module",
   "devDependencies": {
     "nodemon": "^3.1.10",
     "typescript": "^5.9.3"
