@@ -20,48 +20,56 @@ function fetchWeatherData(
   callback: ErrorCallback<WeatherData>
 ): void {
   const apiKey = "YOUR_API_KEY";
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&hourly=temperature_2m`;
 
-  http
-    .get(url, (res) => {
-      if (res.statusCode !== 200) {
-        callback(
-          new ApiResponseError(
-            "WEATHER_API_ERROR",
-            `Failed to fetch weather data: HTTP ${res.statusCode}`
-          ),
-          null
-        );
-        return;
-      }
+  import("./utils.js")
+    .then(({ getCoordinates }) => getCoordinates(city))
+    .then((coords) => {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&hourly=temperature_2m,relativehumidity_2m`;
 
-      let data = "";
-      res.on("data", (chunk) => {
-        data += chunk;
-      });
-      res.on("end", () => {
-        try {
-          const parsedData = JSON.parse(data) as WeatherData;
-          callback(null, parsedData);
-        } catch (error) {
+      http
+        .get(url, (res) => {
+          if (res.statusCode !== 200) {
+            callback(
+              new ApiResponseError(
+                "WEATHER_API_ERROR",
+                `Failed to fetch weather data: HTTP ${res.statusCode}`
+              ),
+              null
+            );
+            return;
+          }
+
+          let data = "";
+          res.on("data", (chunk) => {
+            data += chunk;
+          });
+          res.on("end", () => {
+            try {
+              const parsedData = JSON.parse(data) as WeatherData;
+              callback(null, parsedData);
+            } catch (error) {
+              callback(
+                new ApiResponseError(
+                  "INVALID_JSON",
+                  "Failed to parse weather API response"
+                ),
+                null
+              );
+            }
+          });
+        })
+        .on("error", (err) => {
           callback(
             new ApiResponseError(
-              "INVALID_JSON",
-              "Failed to parse weather API response"
+              "NETWORK_ERROR",
+              `Network error while fetching weather data: ${err.message}`
             ),
             null
           );
-        }
-      });
+        });
     })
-    .on("error", (err) => {
-      callback(
-        new ApiResponseError(
-          "NETWORK_ERROR",
-          `Network error while fetching weather data: ${err.message}`
-        ),
-        null
-      );
+    .catch((err) => {
+      callback(err as ApiResponseError, null);
     });
 }
 function fetchNews(callback: ErrorCallback<NewsData>): void {
@@ -117,7 +125,17 @@ fetchWeatherData(city, (weatherError, weatherData) => {
     return;
   }
 
-  log("Weather Data:", weatherData);
+  if (weatherData) {
+    import("./utils.js")
+      .then(({ formatWeatherSummary }) => {
+        log(formatWeatherSummary(city, weatherData));
+      })
+      .catch(() => {
+        log("Weather Data:", weatherData);
+      });
+  } else {
+    log("No weather data available.");
+  }
 
   fetchNews((newsError, newsData) => {
     if (newsError) {

@@ -3,7 +3,10 @@ import { ApiResponseError, WeatherData, NewsData } from "./types.js";
 
 export async function fetchWeatherData(city: string): Promise<WeatherData> {
   const apiKey = "YOUR_API_KEY";
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&hourly=temperature_2m`;
+  // resolve coordinates for the requested city
+  const { getCoordinates } = await import("./utils.js");
+  const coords = await getCoordinates(city);
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&hourly=temperature_2m,relativehumidity_2m`;
 
   try {
     const data = await new Promise<WeatherData>((resolve, reject) => {
@@ -104,8 +107,14 @@ export async function fetchNews(): Promise<NewsData> {
 // Example usage:
 async function displayData() {
   try {
-    const weatherData = await fetchWeatherData("London");
-    console.log("Weather Data:", weatherData);
+    const city = process.argv[2] || "London";
+    const weatherData = await fetchWeatherData(city);
+    try {
+      const { formatWeatherSummary } = await import("./utils.js");
+      console.log(formatWeatherSummary(city, weatherData));
+    } catch {
+      console.log("Weather Data:", weatherData);
+    }
     const newsData = await fetchNews();
     console.log("News Data:", newsData);
   } catch (error) {

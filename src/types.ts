@@ -9,6 +9,7 @@ export interface WeatherData {
   longitude: number;
   hourly: {
     temperature_2m: number[];
+    relativehumidity_2m?: number[];
     time: string[];
   };
 }

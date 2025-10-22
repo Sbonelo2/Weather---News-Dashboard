@@ -3,49 +3,55 @@ import { ApiResponseError, WeatherData, NewsData } from "./types.js";
 
 export function fetchWeatherData(city: string): Promise<WeatherData> {
   const apiKey = "YOUR_API_KEY";
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&hourly=temperature_2m`;
+  // resolve coordinates first, then fetch weather
+  return import("./utils.js")
+    .then(({ getCoordinates }) => getCoordinates(city))
+    .then((coords) => {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&hourly=temperature_2m,relativehumidity_2m`;
 
-  return new Promise<WeatherData>((resolve, reject) => {
-    http
-      .get(url, (res) => {
-        if (res.statusCode !== 200) {
-          reject(
-            new ApiResponseError(
-              "WEATHER_API_ERROR",
-              `Failed to fetch weather data: HTTP ${res.statusCode}`
-            )
-          );
-          return;
-        }
+      return new Promise<WeatherData>((resolve, reject) => {
+        http
+          .get(url, (res) => {
+            if (res.statusCode !== 200) {
+              reject(
+                new ApiResponseError(
+                  "WEATHER_API_ERROR",
+                  `Failed to fetch weather data: HTTP ${res.statusCode}`
+                )
+              );
+              return;
+            }
 
-        let data = "";
-        res.on("data", (chunk) => {
-          data += chunk;
-        });
-        res.on("end", () => {
-          try {
-            resolve(JSON.parse(data));
-          } catch (error) {
+            let data = "";
+            res.on("data", (chunk) => {
+              data += chunk;
+            });
+            res.on("end", () => {
+              try {
+                resolve(JSON.parse(data));
+              } catch (error) {
+                reject(
+                  new ApiResponseError(
+                    "INVALID_JSON",
+                    "Failed to parse weather API response"
+                  )
+                );
+              }
+            });
+          })
+          .on("error", (err) => {
             reject(
               new ApiResponseError(
-                "INVALID_JSON",
-                "Failed to parse weather API response"
+                "NETWORK_ERROR",
+                `Network error while fetching weather data: ${err.message}`
               )
             );
-          }
-        });
-      })
-      .on("error", (err) => {
-        reject(
-          new ApiResponseError(
-            "NETWORK_ERROR",
-            `Network error while fetching weather data: ${err.message}`
-          )
-        );
+          });
       });
-  }).catch((error) => {
-    throw ApiResponseError.format(error);
-  });
+    })
+    .catch((error) => {
+      throw ApiResponseError.format(error);
+    });
 }
 export function fetchNews(): Promise<NewsData> {
   const apiKey = "YOUR_API_KEY";
@@ -94,9 +100,16 @@ export function fetchNews(): Promise<NewsData> {
   });
 }
 // Example usage:
-fetchWeatherData("London")
+const cityArg = process.argv[2] || "London";
+fetchWeatherData(cityArg)
   .then((weatherData) => {
-    console.log("Weather Data:", weatherData);
+    import("./utils.js")
+      .then(({ formatWeatherSummary }) => {
+        console.log(formatWeatherSummary(cityArg, weatherData));
+      })
+      .catch(() => {
+        console.log("Weather Data:", weatherData);
+      });
     return fetchNews();
   })
   .then((newsData) => {
@@ -106,7 +119,7 @@ fetchWeatherData("London")
     console.error("Error:", error);
   });
 // Implement Promise.all() and Promise.race() examples
-Promise.all([fetchWeatherData("London"), fetchNews()])
+Promise.all([fetchWeatherData(cityArg), fetchNews()])
   .then(([weatherData, newsData]) => {
     console.log("Promise.all - Weather Data:", weatherData);
     console.log("Promise.all - News Data:", newsData);
@@ -114,7 +127,7 @@ Promise.all([fetchWeatherData("London"), fetchNews()])
   .catch((error) => {
     console.error("Promise.all Error:", error);
   });
-Promise.race([fetchWeatherData("London"), fetchNews()])
+Promise.race([fetchWeatherData(cityArg), fetchNews()])
   .then((firstData) => {
     console.log("Promise.race - First Data:", firstData);
   })
