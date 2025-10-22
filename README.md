@@ -75,3 +75,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Weather API providers
 - News API providers
+
+
+<img src="https://socialify.git.ci/Sbonelo2/Weather---News-Dashboard/image?language=1&owner=1&name=1&stargazers=1&theme=Light" alt="Weather---News-Dashboard" width="640" height="320" />
